@@ -1,49 +1,44 @@
 from flask import Flask, jsonify, request
-from app.models import BusinessModel, ReviewModel
-from app.crud import create_review, update_review, check_review_exists
+from pymongo.errors import PyMongoError
 from pydantic import ValidationError
-from bson.objectid import ObjectId
+from crud import MongoCRUD
+from mongo_connection import MongoConnection
 
 app = Flask(__name__)
 
-# Replace with your actual MongoDB connection string if necessary
-app.config["MONGO_URI"] = "mongodb://localhost:27017/bizdirectory"
-
-mongo = PyMongo(app)
-
-
-@app.route('/business', methods=['POST'])
-def add_business():
+@app.before_first_request
+def initialize_db():
     try:
-        data = request.json
-        business = BusinessModel(**data)
-        mongo.db.business.insert_one(business.dict())
-        return jsonify({"message": "Business created"}), 201
-    except ValidationError as e:
-        return jsonify({"error": e.errors()}), 400
+        # Establish the connection once when the app starts
+        mongo_conn = MongoConnection().connect(uri="mongodb://localhost:27017/biz_directory")
+        # Initialize CRUD operations class with the connected database
+        global mongo_crud
+        mongo_crud = MongoCRUD(mongo_conn)  # Pass the connection object into MongoCRUD
+    except ConnectionError as e:
+        print(f"Database connection failed: {str(e)}")
 
-@app.route('/business/<string:business_id>/review', methods=['POST'])
-def add_review(business_id):
+@app.route('/register_business', methods=['POST'])
+def register_business():
     try:
-        data = request.json
-        review = ReviewModel(**data)
-        
-        # Check if this user has already reviewed the business
-        if check_review_exists(mongo.db, business_id, review.reviewerEmail):
-            return jsonify({"error": "You have already reviewed this business"}), 400
-        
-        # Proceed to add the review
-        result = create_review(mongo.db, business_id, review.dict())
-        if result:
-            return jsonify({"message": "Review added"}), 201
-        return jsonify({"error": "Business not found"}), 404
-    except ValidationError as e:
-        return jsonify({"error": e.errors()}), 400
+        business_data = request.json
+        new_business = mongo_crud.register_business(business_data)
+        return jsonify(new_business.dict()), 201
+    except (ValueError, ValidationError) as e:
+        return jsonify({"error": str(e)}), 400
+    except PyMongoError as e:
+        return jsonify({"error": "Database error", "details": str(e)}), 500
 
-@app.route('/business/<string:business_id>/review/<string:reviewer_email>', methods=['PUT'])
-def edit_review(business_id, reviewer_email):
-    data = request.json
-    result = update_review(mongo.db, business_id, reviewer_email, data)
-    if result:
-        return jsonify({"message": "Review updated"}), 200
-    return jsonify({"error": "Review not found"}), 404
+@app.route('/get_business/<string:business_name>', methods=['GET'])
+def get_business(business_name: str):
+    try:
+        # Retrieve the business by name
+        business = mongo_crud.get_business_by_name(business_name)
+        return jsonify(business.dict()), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+    except PyMongoError as e:
+        return jsonify({"error": "Database error", "details": str(e)}), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

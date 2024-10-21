@@ -26,7 +26,7 @@ class BusinessModel(BaseModel):
     address: str
     contactEmail: EmailStr  # Pydantic will validate this
     contactPhone: str  # Keep it as a string for validation
-    businessType: str
+    businessType: Optional[str] = Field(None, description="Type or category of the business")
     reviews: Optional[List[ReviewModel]] = Field(default_factory=list)
     overallRating: condecimal(gt=-0.01, lt=5.01, decimal_places=2) = Field(0.00)
 
