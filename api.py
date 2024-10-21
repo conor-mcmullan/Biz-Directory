@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from pymongo.errors import PyMongoError
 from pydantic import ValidationError
-from crud import MongoCRUD
+from mongo_crud import MongoCRUD
 from mongo_connection import MongoConnection
 
 app = Flask(__name__)

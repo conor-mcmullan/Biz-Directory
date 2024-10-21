@@ -1,10 +1,7 @@
 # main.py
 
-from crud import register_business
 from datetime import datetime
-from pydantic import ValidationError
-from pymongo.errors import PyMongoError
-
+from pprint import pprint
 
 def main():
     # Example of registering a new business with reviews
@@ -33,13 +30,7 @@ def main():
             }
         ]
     }
-
-    try:
-        registered_business = register_business(new_business_json)
-        print("Registered business:", registered_business)
-    except (ValueError, PyMongoError, ValidationError) as e:
-        print(f"Error: {e}")
-
+    pprint(new_business_json)
 
 if __name__ == "__main__":
     main()
