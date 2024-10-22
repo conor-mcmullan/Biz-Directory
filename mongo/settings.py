@@ -1,0 +1,6 @@
+
+MONGO_HOST = "localhost"
+MONGO_PORT = 27017
+MONGO_DATABASE = "biz_directory"
+
+MONGO_URI = f"mongodb://{MONGO_HOST}:{MONGO_PORT}/{MONGO_DATABASE}"

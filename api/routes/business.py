@@ -1,23 +1,14 @@
-from flask import Flask, jsonify, request
+# app/routes/business.py
+
+from flask import Blueprint, jsonify, request
 from pymongo.errors import PyMongoError
 from pydantic import ValidationError
-from mongo_crud import MongoCRUD
-from mongo_connection import MongoConnection
+from mongo.mongo_db_initialiser import mongo_crud
 
-app = Flask(__name__)
+# Create the business blueprint
+business_bp = Blueprint('business', __name__)
 
-@app.before_first_request
-def initialize_db():
-    try:
-        # Establish the connection once when the app starts
-        mongo_conn = MongoConnection().connect(uri="mongodb://localhost:27017/biz_directory")
-        # Initialize CRUD operations class with the connected database
-        global mongo_crud
-        mongo_crud = MongoCRUD(mongo_conn)  # Pass the connection object into MongoCRUD
-    except ConnectionError as e:
-        print(f"Database connection failed: {str(e)}")
-
-@app.route('/register_business', methods=['POST'])
+@business_bp.route('/register', methods=['POST'])
 def register_business():
     try:
         business_data = request.json
@@ -28,7 +19,7 @@ def register_business():
     except PyMongoError as e:
         return jsonify({"error": "Database error", "details": str(e)}), 500
 
-@app.route('/get_business/<string:business_name>', methods=['GET'])
+@business_bp.route('/<string:business_name>', methods=['GET'])
 def get_business(business_name: str):
     try:
         # Retrieve the business by name
@@ -38,7 +29,3 @@ def get_business(business_name: str):
         return jsonify({"error": str(e)}), 404
     except PyMongoError as e:
         return jsonify({"error": "Database error", "details": str(e)}), 500
-
-
-if __name__ == '__main__':
-    app.run(debug=True)

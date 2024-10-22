@@ -1,8 +1,9 @@
 from bson import ObjectId
-from models import BusinessModel, ReviewModel
+from models.review import Review
+from models.business import Business
 from pymongo.errors import PyMongoError
-from mongo_connection import MongoConnection
-from utils import sanitize_string
+from mongo.mongo_connection import MongoConnection
+from utils.sanitise import sanitize_string
 
 class MongoCRUD:
     def __init__(self, mongo_connection: MongoConnection = None):
@@ -12,7 +13,7 @@ class MongoCRUD:
             self.db = MongoConnection().get_db()
 
     def calculate_overall_rating(self, reviews: list) -> float:
-        """Calculate the overall rating from a list of ReviewModel objects."""
+        """Calculate the overall rating from a list of Review objects."""
         if not reviews:
             return 0.0
         total_rating = sum(review.rating for review in reviews)
@@ -50,7 +51,7 @@ class MongoCRUD:
                 else:
                     review["reviewID"] = ObjectId()  # Generate a new reviewID
 
-                review_model = ReviewModel(**review)
+                review_model = Review(**review)
                 reviews.append(review_model)
 
             business_data['reviews'] = reviews
@@ -58,8 +59,8 @@ class MongoCRUD:
         # Calculate the overall rating based on reviews
         business_data['overallRating'] = self.calculate_overall_rating(reviews)
 
-        # Create a BusinessModel instance
-        new_business = BusinessModel(**business_data)
+        # Create a Business instance
+        new_business = Business(**business_data)
 
         # Insert into the business-specific collection
         try:
@@ -96,8 +97,8 @@ class MongoCRUD:
             # If no reviewID provided, generate a new ObjectId
             review_data["reviewID"] = ObjectId()
 
-        # Create a ReviewModel instance
-        review_model = ReviewModel(**review_data)
+        # Create a Review instance
+        review_model = Review(**review_data)
 
         # Append or update the review in the business's reviews list
         if "reviews" not in business_data:
@@ -133,4 +134,4 @@ class MongoCRUD:
         if not business_data:
             raise ValueError(f"Business with name '{business_name}' not found.")
         
-        return BusinessModel(**business_data)
+        return Business(**business_data)

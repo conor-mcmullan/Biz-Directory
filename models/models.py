@@ -4,7 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, condecimal, EmailStr, field_validator
 from typing import List, Optional
 
-class ReviewModel(BaseModel):
+class Review(BaseModel):
     reviewID: ObjectId
     review_ts: datetime
     rating: condecimal(gt=-0.01, lt=5.01, decimal_places=2)
@@ -20,14 +20,14 @@ class ReviewModel(BaseModel):
         return v  # Already validated by EmailStr
 
 
-class BusinessModel(BaseModel):
+class Business(BaseModel):
     businessID: ObjectId
     name: str
     address: str
     contactEmail: EmailStr  # Pydantic will validate this
     contactPhone: str  # Keep it as a string for validation
     businessType: Optional[str] = Field(None, description="Type or category of the business")
-    reviews: Optional[List[ReviewModel]] = Field(default_factory=list)
+    reviews: Optional[List[Review]] = Field(default_factory=list)
     overallRating: condecimal(gt=-0.01, lt=5.01, decimal_places=2) = Field(0.00)
 
     @field_validator('name', 'businessType')
